@@ -151,29 +151,31 @@ const checkRowResult = (row) => {
     return rowWon;
 }
 
-const checkWinner = (reelRows) => {
+const checkWinner = async (reelRows, lines) => {
+    await(setTimeout(8000));
     let numRowsWon = 0;
     for(const row of reelRows)
     {
         if(checkRowResult(row) == true)
         {
-            switch(numRowsWon)
-            {
-                default:
-                console.log("You won!");
-                break;
-                case 1:
-                console.log("Two paylines won!");
-                break;
-                case 2:
-                console.log("All three paylines won! Jackpot!!!");
-                break;
-            }
             numRowsWon++;
         }
-        else if(numRowsWon == 0)
+    }
+    if(numRowsWon <= lines){
+        switch(numRowsWon)
         {
+            default:
             console.log("Better luck next time...");
+            break;
+            case 1:
+            console.log("You won!");
+            break;
+            case 2:
+            console.log("Two paylines won, nice!");
+            break;
+            case 3:
+            console.log("All three paylines won! Jackpot!!!");
+            break;
         }
     }
 }
