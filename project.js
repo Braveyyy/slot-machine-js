@@ -1,15 +1,7 @@
-/* 
-    Steps:
-
-    Check if won
-    If won, give user winnings
-    If lost, take their bet
-    Play again ?
-*/
 
 //const prompt = require("prompt-sync")();
 import promptSync from 'prompt-sync';
-import { setTimeout } from "timers/promises";
+//import { setTimeout } from "timers/promises";
 const prompt = promptSync();
 
 const ROWS = 3;
@@ -55,7 +47,7 @@ const getNumberOfLines = () => {
         const inputLines = prompt("Please enter the number of lines to bet on (1-3): ");
         const numLines = parseFloat(inputLines);
     
-        if(isNaN(numLines) || numLines <= 0 || numLines > 3)
+        if(isNaN(numLines) || numLines <= 0 || numLines > ROWS)
         {
             console.log("Invalid number of lines, try again.");
         }
@@ -84,6 +76,7 @@ const getBet = (balance, lines) => {
     }
 }
 
+// Spins slot and randomizes reel symbols
 const spinSlot = () => {
     const symbols = [];
     for (const [symbol, count] of Object.entries(SYMBOLS_COUNT)){
@@ -107,6 +100,7 @@ const spinSlot = () => {
     return reels;
 }
 
+// Transposes array from cols to rows
 const transpose = (reels) => {
     const rows = [];
     for(let i = 0; i < ROWS; i++){
@@ -119,72 +113,98 @@ const transpose = (reels) => {
     return rows;
 }
 
-const printSlot = async (reelRows) => {
+// Prints slot result to the console
+const printSlot = (reelRows) => {
     console.log("Spinning slot...");
     for(const row of reelRows){
-        await(setTimeout(1000));
         for(const[i, symbol] of row.entries()){
-            //rowString += symbol;
-            await setTimeout(500);
             if(i != row.length - 1)
             {
-                //rowString += " | ";
                 process.stdout.write(symbol + " | ");
             }
             else
             {
                 console.log(symbol);
             }
-            //console.log(rowString);
         }
     }
 }
 
+// Checks if row passed in has all matching symbols
 const checkRowResult = (row) => {
     let rowWon = true;
-    for(let i = 0; i < row.length - 1; i++)
+    for(const symbol of row)
     {
-        if(row[i] != row[i+1]){
+        if(symbol != row[0]){
             rowWon = false;
+            break;
         }
     }
     return rowWon;
 }
 
-const checkWinner = async (reelRows, lines) => {
-    await(setTimeout(8000));
+// Checks if won based on number of lines bet, calculates winnings, and returns winnings
+const checkWinner = (reelRows, lines, bet) => {
+    let winnings = 0;
     let numRowsWon = 0;
-    for(const row of reelRows)
+    for(let i = 0; i < lines; i++)
     {
+        let row = reelRows[i];
+        
         if(checkRowResult(row) == true)
         {
             numRowsWon++;
+            winnings += bet * SYMBOL_VALUES[row[0]]
+            console.log("TEST : " + row);
         }
+
     }
-    if(numRowsWon <= lines){
-        switch(numRowsWon)
-        {
-            default:
-            console.log("Better luck next time...");
-            break;
-            case 1:
-            console.log("You won!");
-            break;
-            case 2:
-            console.log("Two paylines won, nice!");
-            break;
-            case 3:
-            console.log("All three paylines won! Jackpot!!!");
-            break;
-        }
+    switch(numRowsWon)
+    {
+        default:
+        console.log("Better luck next time...");
+        break;
+        case 1:
+        console.log("You won!");
+        break;
+        case 2:
+        console.log("Two paylines won, nice!");
+        break;
+        case 3:
+        console.log("All three paylines won! Jackpot!!!");
+        break;
     }
+    console.log("Received $" + winnings);
+    return winnings;
 }
 
+// Plays the slot game!
+const game = () => {
+    let balance = depositMoney();
 
-let balance = depositMoney();
-const lines = getNumberOfLines();
-const bet = getBet(balance, lines);
-const reels = spinSlot();
-const reelRows = transpose(reels);
-printSlot(reelRows);
-checkWinner(reelRows);
+    while(true)
+    {
+        console.log("You have a balance of $" + balance + ".");
+        const lines = getNumberOfLines();
+        const bet = getBet(balance, lines);
+        balance -= (bet * lines);
+        const reels = spinSlot();
+        const reelRows = transpose(reels);
+        printSlot(reelRows);
+        let wonAmount = checkWinner(reelRows, lines, bet);
+        balance += wonAmount;
+
+        if(balance <= 0)
+        {
+            console.log("No more money!");
+            break;
+        }
+
+        const playAgain = prompt("Do you want to play again (y/n)? ");
+
+        if(playAgain != "y") break;
+    }
+
+}
+// Start
+game();
